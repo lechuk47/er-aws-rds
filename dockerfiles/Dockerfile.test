@@ -1,0 +1,5 @@
+FROM quay.io/app-sre/er-aws-rds:0.0.1
+
+COPY requirements_test.txt ./
+COPY tests/ ./tests/
+RUN pip3 install -r requirements_test.txt
