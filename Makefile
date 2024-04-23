@@ -7,8 +7,8 @@ endif
 
 IMAGE=${BASE_IMAGE}:${VERSION}
 
-.PHONY: all
-all: build push
+.PHONY: deploy
+deploy: build test push
 
 .PHONY: build
 build:
