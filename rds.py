@@ -53,7 +53,7 @@ from input import AppInterfaceInput, ParameterGroup  # , clean_data
 
 
 class Stack(TerraformStack):
-    def _populate_parameter_group(self, pg: ParameterGroup, db_identifier: str) -> None:
+    def _populate_parameter_group(self, pg: ParameterGroup, db_identifier: str) -> str:
         # Dumping the whole parameter group doesn't work. "Parameter" values are populated correctly
         # but CDKTF does not take the apply_method attribute.
         # I don't know/understand why. Dumping the parameters separately works well.
@@ -76,6 +76,8 @@ class Stack(TerraformStack):
                 for p in pg.parameters or []
             ],
         )
+
+        return pg_name
 
     def __init__(self, scope: Construct, id: str, input: AppInterfaceInput):
         super().__init__(scope, id)
@@ -104,7 +106,7 @@ class Stack(TerraformStack):
         ).result
 
         if input.data.parameter_group:
-            self._populate_parameter_group(
+            input.data.parameter_group_name = self._populate_parameter_group(
                 input.data.parameter_group, input.data.identifier
             )
 

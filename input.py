@@ -124,6 +124,7 @@ class Rds(RdsAppInterface):
     username: Optional[str] = None
     # _password is not in the input, the field is used to populate the random password
     password: Optional[str] = None
+    parameter_group_name: Optional[str] = None
 
     @computed_field
     def id_(self) -> str:
@@ -208,6 +209,6 @@ class AppInterfaceInput(BaseModel):
 
 
 def read_current_outputs() -> dict[str, str]:
-    with open("current_outputs", "r") as f:
+    with open("current_outputs", "r", encoding="utf-8") as f:
         data = json.load(f)
         return data["CDKTF"]

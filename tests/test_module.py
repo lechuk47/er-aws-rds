@@ -19,6 +19,7 @@ class TestMain:
                 "engine": "postgres",
                 "db_name": "postgres",
                 "allocated_storage": 20,
+                "parameter_group_name": "test-rds-postgres-14",
             },
         )
 
