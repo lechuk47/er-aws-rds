@@ -6,6 +6,11 @@ cp /credentials ${HOME}/.aws/
 DRY_RUN=${DRY_RUN:-"True"}
 ACTION=${ACTION:-"Apply"}
 
+# CDKTF output options
+export CI=true
+export FORCE_COLOR=0
+export TF_CLI_ARGS="-no-color"
+
 if [[ $ACTION == "Apply" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
         cdktf plan
