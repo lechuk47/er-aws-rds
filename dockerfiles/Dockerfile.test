@@ -1,5 +1,6 @@
-FROM quay.io/app-sre/er-aws-rds:0.0.1
+ARG IMAGE_TAG=0.0.1
+FROM quay.io/app-sre/er-aws-rds:${IMAGE_TAG}
 
 COPY requirements_test.txt ./
-COPY tests/ ./tests/
 RUN pip3 install -r requirements_test.txt
+COPY tests/ ./tests/

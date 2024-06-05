@@ -13,6 +13,8 @@ RUN mkdir -p ${TF_PROVIDER_RANDOM_PATH} && \
     unzip /tmp/package-${TF_PROVIDER_RANDOM_VERSION}.zip -d ${TF_PROVIDER_RANDOM_PATH}/ && \
     rm /tmp/package-${TF_PROVIDER_RANDOM_VERSION}.zip
 
-COPY rds.py input.py main.py cdktf.json entrypoint.sh requirements.txt ./
+COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
+
+COPY rds.py input.py main.py cdktf.json entrypoint.sh ./
 ENTRYPOINT [ "bash", "entrypoint.sh" ]

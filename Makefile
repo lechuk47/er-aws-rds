@@ -1,25 +1,22 @@
 BASE_IMAGE=quay.io/app-sre/er-aws-rds
 
-VERSION := $(shell git describe --tags)
-ifeq ($(VERSION),)
-	VERSION = 0.0.1
+IMAGE_TAG := $(shell git describe --tags)
+ifeq ($(IMAGE_TAG),)
+	IMAGE_TAG = 0.0.1
 endif
-
-IMAGE=${BASE_IMAGE}:${VERSION}
 
 .PHONY: deploy
 deploy: build test push
 
 .PHONY: build
 build:
-	VERSION=$(git describe --abbrev=0 --tags)
-	docker build -t ${IMAGE} -f dockerfiles/Dockerfile .
+	docker build -t ${BASE_IMAGE}:${IMAGE_TAG} -f dockerfiles/Dockerfile .
 
 .PHONY: push
 push:
-	docker push ${IMAGE}
+	docker push ${BASE_IMAGE}:${IMAGE_TAG}
 
 .PHONY: test
 test: build
-	docker build -t ${IMAGE}-test -f dockerfiles/Dockerfile.test .
-	docker run --rm --entrypoint python3 ${IMAGE}-test -m pytest -v
+	docker build -t ${BASE_IMAGE}-test --build-arg="IMAGE_TAG=${IMAGE_TAG}" -f dockerfiles/Dockerfile.test .
+	docker run --rm --entrypoint python3 ${BASE_IMAGE}-test -m pytest -v
