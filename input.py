@@ -1,5 +1,6 @@
 import json
-from typing import Optional
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from external_resources_io.input import AppInterfaceProvision
 from pydantic import (
@@ -98,6 +99,7 @@ class RdsAppInterface(BaseModel):
     # Output_resource_name is redundant
     output_resource_name: Optional[str] = Field(default=None, exclude=True)
     output_prefix: str = Field(exclude=True)
+    default_tags: Sequence[dict[str, Any]] = Field(default=None, exclude=True)
 
 
 class Rds(RdsAppInterface):
@@ -125,6 +127,7 @@ class Rds(RdsAppInterface):
     # _password is not in the input, the field is used to populate the random password
     password: Optional[str] = None
     parameter_group_name: Optional[str] = None
+    tags: dict[str, Any]
 
     @computed_field
     def id_(self) -> str:

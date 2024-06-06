@@ -2,6 +2,7 @@ from cdktf import Testing
 from cdktf_cdktf_provider_aws.db_instance import DbInstance
 from cdktf_cdktf_provider_aws.db_parameter_group import DbParameterGroup
 from conftest import input_object
+
 from rds import Stack
 
 
@@ -20,6 +21,13 @@ class TestMain:
                 "db_name": "postgres",
                 "allocated_storage": 20,
                 "parameter_group_name": "test-rds-postgres-14",
+                "tags": {
+                    "app": "external-resources-poc",
+                    "cluster": "appint-ex-01",
+                    "environment": "stage",
+                    "managed_by_integration": "external_resources",
+                    "namespace": "external-resources-poc",
+                },
             },
         )
 

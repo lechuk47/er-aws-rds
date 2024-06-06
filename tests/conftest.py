@@ -1,6 +1,7 @@
 import json
 
 from cdktf import Testing
+
 from input import AppInterfaceInput
 
 Testing.__test__ = False
@@ -49,7 +50,21 @@ def input_data() -> dict:
                 "q_format": null
             },
             "output_prefix": "prefixed-test-rds",
-            "region": "us-east-1"
+            "region": "us-east-1",
+            "tags": {
+                "app": "external-resources-poc",
+                "cluster": "appint-ex-01",
+                "environment": "stage",
+                "managed_by_integration": "external_resources",
+                "namespace": "external-resources-poc"
+            },
+            "default_tags": [
+                {
+                    "tags": {
+                        "app": "app-sre-infra"
+                    }
+                }
+            ]
         },
         "provision": {
             "provision_provider": "aws",

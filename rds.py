@@ -53,7 +53,9 @@ from input import AppInterfaceInput, ParameterGroup  # , clean_data
 
 
 class Stack(TerraformStack):
-    def _populate_parameter_group(self, pg: ParameterGroup, db_identifier: str) -> str:
+    def _populate_parameter_group(
+        self, pg: ParameterGroup, db_identifier: str, tags: dict[str, str]
+    ) -> str:
         # Dumping the whole parameter group doesn't work. "Parameter" values are populated correctly
         # but CDKTF does not take the apply_method attribute.
         # I don't know/understand why. Dumping the parameters separately works well.
@@ -75,6 +77,7 @@ class Stack(TerraformStack):
                 DbParameterGroupParameter(**p.model_dump(exclude_none=True))
                 for p in pg.parameters or []
             ],
+            tags=tags,
         )
 
         return pg_name
@@ -93,7 +96,12 @@ class Stack(TerraformStack):
             dynamodb_table=module_provision_data.tf_state_dynamodb_table,
             profile="external-resources-state",
         )
-        AwsProvider(self, "Aws", region=input.data.region)
+        AwsProvider(
+            self,
+            "Aws",
+            region=input.data.region,
+            default_tags=input.data.default_tags,
+        )
         RandomProvider(self, "Random")
 
         input.data.password = Password(
@@ -107,12 +115,12 @@ class Stack(TerraformStack):
 
         if input.data.parameter_group:
             input.data.parameter_group_name = self._populate_parameter_group(
-                input.data.parameter_group, input.data.identifier
+                input.data.parameter_group, input.data.identifier, input.data.tags
             )
 
         if input.data.old_parameter_group:
             self._populate_parameter_group(
-                input.data.old_parameter_group, input.data.identifier
+                input.data.old_parameter_group, input.data.identifier, input.data.tags
             )
 
         if input.data.enhanced_monitoring:
