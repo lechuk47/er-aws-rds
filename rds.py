@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import json
 
-from cdktf import S3Backend, TerraformOutput, TerraformStack
+from cdktf import ITerraformDependable, S3Backend, TerraformOutput, TerraformStack
 from cdktf_cdktf_provider_aws.data_aws_db_instance import DataAwsDbInstance
 from cdktf_cdktf_provider_aws.data_aws_kms_key import DataAwsKmsKey
 from cdktf_cdktf_provider_aws.data_aws_sns_topic import DataAwsSnsTopic
@@ -18,41 +18,12 @@ from cdktf_cdktf_provider_random.password import Password
 from cdktf_cdktf_provider_random.provider import RandomProvider
 from constructs import Construct
 
-# from external_resources_io.input import parse_base64_model
-from input import AppInterfaceInput, ParameterGroup  # , clean_data
-
-# 1.- Check rds name is empty or under 63 chars
-# 2.- Apply immediate default to False if not set (Module)
-# 3.- Multi_AZ Checks
-# If multi-az -> pop availability_zone --> IF multi-az and availability_zone throw error ?¿
-# If multi-region-account:
-#  - if AZ -> provider from REGION_FROM_(AZ)
-#  - if REGION ->
-# if AZ -> check AZ belongs to REGION
-# if no AZ -> provider from REGION
-# Parameter Group.
-#  If parameter_group populate_pg
-#  If old_parameter_group.
-#    If no parameter_group -> ERROR
-#    If pg_name == old_pg_name -> ERROR
-# Enhanced monitoring
-# If enhanced_monitoring (POP)
-#   monitoring_interval = 60 if not set
-#  Create IAM Role for enhanced monitoring
-#  Attach AmazonRDSEnhancedMonitoringRole to the Role
-# RESET PASSWORD
-# CA_CERT
-# REPLICA_SOURCE (Gets the other instance from AppInterface)
-# backup_retention_period=0
-# replica_region == region
-#
-# replica_region != region
-# KMS_KEY
-# EVENT NOTIFICATIONS
-# OUTPUTS
+from input import AppInterfaceInput, ParameterGroup
 
 
 class Stack(TerraformStack):
+    db_dependencies: list[ITerraformDependable] = []
+
     def _populate_parameter_group(
         self, pg: ParameterGroup, db_identifier: str, tags: dict[str, str]
     ) -> str:
@@ -67,7 +38,7 @@ class Stack(TerraformStack):
         # database PGs will be reconciled
         pg_name = f"{db_identifier}-{pg.name or 'pg'}"
 
-        DbParameterGroup(
+        dbpg = DbParameterGroup(
             self,
             id_=pg_name,
             name=pg_name,
@@ -80,6 +51,7 @@ class Stack(TerraformStack):
             tags=tags,
         )
 
+        self.db_dependencies.append(dbpg)
         return pg_name
 
     def __init__(self, scope: Construct, id: str, input: AppInterfaceInput):
@@ -185,7 +157,11 @@ class Stack(TerraformStack):
                 )
                 input.data.kms_key_id = data_kms.arn
 
-        db_instance = DbInstance(self, **input.data.model_dump(exclude_none=True))
+        db_instance = DbInstance(
+            self,
+            **input.data.model_dump(exclude_none=True),
+            depends_on=self.db_dependencies,
+        )
 
         # Event Notifications
         for en in input.data.event_notifications or []:
