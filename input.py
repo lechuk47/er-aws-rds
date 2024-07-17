@@ -1,4 +1,3 @@
-import json
 from collections.abc import Sequence
 from typing import Any, Optional
 
@@ -209,9 +208,3 @@ class Rds(RdsAppInterface):
 class AppInterfaceInput(BaseModel):
     data: Rds
     provision: AppInterfaceProvision
-
-
-def read_current_outputs() -> dict[str, str]:
-    with open("current_outputs", "r", encoding="utf-8") as f:
-        data = json.load(f)
-        return data["CDKTF"]
