@@ -11,9 +11,13 @@ export CI=true
 export FORCE_COLOR=0
 export TF_CLI_ARGS="-no-color"
 
+CDKTF_OUT_DIR=$HOME/cdktf.out/stacks/CDKTF
+
 if [[ $ACTION == "Apply" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
-        cdktf plan
+        cdktf plan && \
+        terraform show -json $CDKTF_OUT_DIR/plan > $CDKTF_OUT_DIR/plan.json && \
+        python validate_plan.py
     elif [[ $DRY_RUN == "False" ]]; then
         cdktf apply \
             --auto-approve \
@@ -22,7 +26,10 @@ if [[ $ACTION == "Apply" ]]; then
     fi
 elif [[ $ACTION == "Destroy" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
-        cdktf synth && cd cdktf.out/stacks/CDKTF && terraform init && terraform plan -destroy
+        cdktf synth && \
+        cd ${CDKTF_OUT_DIR} && \
+        terraform init && \
+        terraform plan -destroy
     elif [[ $DRY_RUN == "False" ]]; then
         cdktf destroy \
             --auto-approve

@@ -112,6 +112,8 @@ class Rds(RdsAppInterface):
 
     model_config = ConfigDict(extra="allow")
     identifier: str
+    engine: str | None = None
+    allow_major_version_upgrade: Optional[bool] = False
     availability_zone: Optional[str] = None
     monitoring_interval: Optional[int] = 0
     apply_immediately: Optional[bool] = False
