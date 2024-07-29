@@ -62,7 +62,7 @@ class RDSPlanValidator:
             and Action.ActionUpdate in c.change.actions
         ]
 
-    def _validate_major_version_update(self) -> None:
+    def _validate_major_version_upgrade(self) -> None:
         for u in self.aws_db_instance_updates:
             if not u.change:
                 continue
@@ -77,20 +77,13 @@ class RDSPlanValidator:
                         "Engine version cannot be updated. Current_version: %s, Desired_version: %s, Valid update versions: %s"
                         % (current_version, desired_version, valid_update_versions)
                     )
-
-    def _validate_parameter_group_name(self, pg_name: str, engine: str) -> None:
-        if pg_name not in self.aws_api.get_rds_parameter_groups(engine=engine):
-            self.errors.append(
-                "Parameter group does not exist. Parameter_group: %s"
-                % (self.input.data.parameter_group_name)
-            )
+                if not self.input.data.allow_major_version_upgrade:
+                    self.errors.append(
+                        "To enable major version ugprades, allow_major_version_ugprade attribute must be set to True"
+                    )
 
     def validate(self) -> bool:
-        self._validate_major_version_update()
-        if self.input.data.parameter_group_name and self.input.data.engine:
-            self._validate_parameter_group_name(
-                self.input.data.parameter_group_name, self.input.data.engine
-            )
+        self._validate_major_version_upgrade()
         if self.errors:
             return False
         else:

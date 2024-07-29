@@ -16,8 +16,8 @@ CDKTF_OUT_DIR=$HOME/cdktf.out/stacks/CDKTF
 if [[ $ACTION == "Apply" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
         cdktf plan && \
-        terraform show -json $CDKTF_OUT_DIR/plan > $CDKTF_OUT_DIR/plan.json && \
-        python validate_plan.py
+        terraform -chdir=$CDKTF_OUT_DIR/ show -json $CDKTF_OUT_DIR/plan > $CDKTF_OUT_DIR/plan.json && \
+        python3 validate_plan.py  $CDKTF_OUT_DIR/plan.json
     elif [[ $DRY_RUN == "False" ]]; then
         cdktf apply \
             --auto-approve \
