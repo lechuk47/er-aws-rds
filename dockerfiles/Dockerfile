@@ -1,4 +1,4 @@
-FROM quay.io/app-sre/er-base-aws-cdktf:0.0.1
+FROM quay.io/app-sre/er-base-cdktf-aws:0.0.1
 
 USER 0
 
@@ -9,18 +9,9 @@ USER 0
 # Eg: cdktf-cdktf-provider-aws-18.0.9 --> Terraform-AWS-PROVIDER 5.29.0
 # 19.6.0 -> 5.37.0
 
-ENV TF_PROVIDER_AWS_VERSION="5.60.0"
 ENV TF_PROVIDER_RANDOM_VERSION="3.6.2"
 
-ENV TF_PLUGIN_CACHE="${HOME}/.terraform.d/plugin-cache"
-ENV TF_PROVIDER_AWS_PATH="${TF_PLUGIN_CACHE}/registry.terraform.io/hashicorp/aws/${TF_PROVIDER_AWS_VERSION}/linux_amd64"
 ENV TF_PROVIDER_RANDOM_PATH="${TF_PLUGIN_CACHE}/registry.terraform.io/hashicorp/random/${TF_PROVIDER_RANDOM_VERSION}/linux_amd64"
-
-RUN mkdir -p ${TF_PROVIDER_AWS_PATH} && \
-    curl -sfL https://releases.hashicorp.com/terraform-provider-aws/${TF_PROVIDER_AWS_VERSION}/terraform-provider-aws_${TF_PROVIDER_AWS_VERSION}_linux_amd64.zip \
-    -o /tmp/package-aws-${TF_PROVIDER_AWS_VERSION}.zip && \
-    unzip /tmp/package-aws-${TF_PROVIDER_AWS_VERSION}.zip -d ${TF_PROVIDER_AWS_PATH}/ && \
-    rm /tmp/package-aws-${TF_PROVIDER_AWS_VERSION}.zip
 
 RUN mkdir -p ${TF_PROVIDER_RANDOM_PATH} && \
     curl -sfL https://releases.hashicorp.com/terraform-provider-random/${TF_PROVIDER_RANDOM_VERSION}/terraform-provider-random_${TF_PROVIDER_RANDOM_VERSION}_linux_amd64.zip \
