@@ -13,13 +13,22 @@ export TF_CLI_ARGS="-no-color"
 
 CDKTF_OUT_DIR=$HOME/cdktf.out/stacks/CDKTF
 
+# CDKTF init forces the provider re-download to calculate
+# Other platform provider SHAs. USing terraform to init the configuration avoids it
+# This shuold be reevaluated in the future.
+# https://github.com/hashicorp/terraform-cdk/issues/3622
 if [[ $ACTION == "Apply" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
-        cdktf plan && \
+        cdktf synth && \
+        terraform -chdir=$CDKTF_OUT_DIR init && \
+        cdktf plan --skip-synth && \
         terraform -chdir=$CDKTF_OUT_DIR/ show -json $CDKTF_OUT_DIR/plan > $CDKTF_OUT_DIR/plan.json && \
         python3 validate_plan.py  $CDKTF_OUT_DIR/plan.json
     elif [[ $DRY_RUN == "False" ]]; then
+        cdktf synth && \
+        terraform -chdir=$CDKTF_OUT_DIR init && \
         cdktf apply \
+            --skip-synth \
             --auto-approve \
             --outputs-file-include-sensitive-outputs=true \
             --outputs-file /work/output.json
@@ -27,10 +36,11 @@ if [[ $ACTION == "Apply" ]]; then
 elif [[ $ACTION == "Destroy" ]]; then
     if [[ $DRY_RUN == "True" ]]; then
         cdktf synth && \
-        cd ${CDKTF_OUT_DIR} && \
-        terraform init && \
-        terraform plan -destroy
+        terraform -chdir=$CDKTF_OUT_DIR init && \
+        terraform -chdir=$CDKTF_OUT_DIR plan -destroy
     elif [[ $DRY_RUN == "False" ]]; then
+        cdktf synth && \
+        terraform -chdir=$CDKTF_OUT_DIR init && \
         cdktf destroy \
             --auto-approve
     fi
