@@ -1,3 +1,4 @@
+import logging
 import sys
 from collections.abc import Mapping
 from typing import Any
@@ -14,6 +15,9 @@ from mypy_boto3_rds import RDSClient
 from mypy_boto3_rds.type_defs import FilterTypeDef
 
 from input import AppInterfaceInput
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("botocore").setLevel(logging.ERROR)
 
 
 class AWSApi:
@@ -95,11 +99,12 @@ if __name__ == "__main__":
         AppInterfaceInput,
         read_input_from_file(),
     )
-    print("Running RDS terraform plan validation:")
+    logging.info("Running RDS terraform plan validation")
     plan = TerraformJsonPlanParser(plan_path=sys.argv[1])
     validator = RDSPlanValidator(plan, input)
     if not validator.validate():
-        print(validator.errors)
+        logging.error(validator.errors)
         sys.exit(1)
     else:
+        logging.info("Validation ended succesfully")
         sys.exit(0)
