@@ -1,17 +1,21 @@
 from cdktf import Testing
 from cdktf_cdktf_provider_aws.db_instance import DbInstance
 from cdktf_cdktf_provider_aws.db_parameter_group import DbParameterGroup
-from conftest import input_object
 
-from rds import Stack
+from er_aws_rds.rds import Stack
+
+from .conftest import input_object
 
 
 class TestMain:
+    """Main test class"""
+
     input = input_object()
     stack = Stack(Testing.app(), "CDKTF", input)
     synthesized = Testing.synth(stack)
 
-    def test_should_contain_rds_instance(self):
+    def test_should_contain_rds_instance(self) -> None:
+        """Test should_contain_rds_instance"""
         assert Testing.to_have_resource_with_properties(
             self.synthesized,
             DbInstance.TF_RESOURCE_TYPE,
@@ -31,7 +35,8 @@ class TestMain:
             },
         )
 
-    def test_shuold_containe_parameter_group(self):
+    def test_shuold_contain_parameter_group(self) -> None:
+        """Test should_contain_parameter_group"""
         assert Testing.to_have_resource_with_properties(
             self.synthesized,
             DbParameterGroup.TF_RESOURCE_TYPE,

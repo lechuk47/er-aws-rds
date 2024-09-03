@@ -1,31 +1,32 @@
-VENV_CMD := . venv/bin/activate &&
-BASE_IMAGE=quay.io/app-sre/er-aws-rds
-
+CODE_ROOT := er_aws_rds
+CONTAINER_ENGINE ?= $(shell which podman >/dev/null 2>&1 && echo podman || echo docker)
+IMAGE_NAME := quay.io/app-sre/er-aws-rds
 IMAGE_TAG := $(shell git describe --tags)
 ifeq ($(IMAGE_TAG),)
-	IMAGE_TAG = 0.0.1
+	IMAGE_TAG = pre
 endif
+BUILD_ARGS := CODE_ROOT=$(CODE_ROOT) POETRY_VERSION=1.8.3 IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG)
 
-.PHONY: deploy
-deploy: build test push
-
-.PHONY: build
-build:
-	docker build -t ${BASE_IMAGE}:${IMAGE_TAG} -f dockerfiles/Dockerfile .
-
-.PHONY: push
-push:
-	docker push ${BASE_IMAGE}:${IMAGE_TAG}
+.PHONY: format
+format:
+	poetry run ruff check
+	poetry run ruff format
 
 .PHONY: test
 test: build
-	docker build -t ${BASE_IMAGE}-test --build-arg="IMAGE_TAG=${IMAGE_TAG}" -f dockerfiles/Dockerfile.test .
-	docker run --rm --entrypoint python3 ${BASE_IMAGE}-test -m pytest -v
+	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME)-test $(foreach arg,$(BUILD_ARGS),--build-arg $(arg)) -f dockerfiles/Dockerfile.test .
+	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run ruff check --no-fix
+	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run ruff format --check
+	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run mypy
+	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run pytest -vv --cov=$(CODE_ROOT) --cov-report=term-missing --cov-report xml
 
-.PHONY: dev-venv
-dev-venv:
-	python3.11 -m venv venv
-	@$(VENV_CMD) pip install --upgrade pip
-	@$(VENV_CMD) pip install -r requirements.txt
-	@$(VENV_CMD) pip install -r requirements_dev.txt
-	@$(VENV_CMD) pip install -r requirements_test.txt
+.PHONY: build
+build:
+	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME):${IMAGE_TAG} $(foreach arg,$(BUILD_ARGS),--build-arg $(arg)) -f dockerfiles/Dockerfile .
+
+.PHONY: push
+push:
+	$(CONTAINER_ENGINE) push ${BASE_IMAGE}:${IMAGE_TAG}
+
+.PHONY: deploy
+deploy: build test push

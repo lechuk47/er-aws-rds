@@ -17,8 +17,17 @@ RUN mkdir -p ${TF_PROVIDER_RANDOM_PATH} && \
     rm /tmp/package-${TF_PROVIDER_RANDOM_VERSION}.zip
 
 WORKDIR ${HOME}
-COPY requirements.txt ./
-RUN python3 -m pip install --user -r requirements.txt
 
-COPY rds.py input.py validate_plan.py main.py cdktf.json entrypoint.sh ./
-ENTRYPOINT [ "bash", "entrypoint.sh" ]
+ENV POETRY_VIRTUALENVS_CREATE=false
+ARG POETRY_VERSION
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install poetry==$POETRY_VERSION
+
+COPY README.md pyproject.toml poetry.lock ./
+RUN poetry install --no-root --without dev
+
+# the source code
+ARG CODE_ROOT
+COPY $CODE_ROOT ./$CODE_ROOT
+
+COPY cdktf.json validate_plan.py ./

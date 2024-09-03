@@ -1,6 +1,6 @@
 {
   "language": "python",
-  "app": "python3 main.py",
+  "app": "python3 -m er_aws_rds",
   "projectId": "ce15f6e1-922e-4c7d-be32-4d94fc82be9a",
   "sendCrashReports": "false",
   "terraformProviders": [],

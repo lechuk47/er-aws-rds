@@ -1,7 +1,7 @@
 import logging
 import sys
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from boto3 import Session
 from botocore.config import Config
@@ -12,23 +12,31 @@ from external_resources_io.terraform import (
     TerraformJsonPlanParser,
 )
 from mypy_boto3_rds import RDSClient
-from mypy_boto3_rds.type_defs import FilterTypeDef
 
-from input import AppInterfaceInput
+if TYPE_CHECKING:
+    from mypy_boto3_rds.type_defs import FilterTypeDef
+
+
+from er_aws_rds.input import AppInterfaceInput
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("botocore").setLevel(logging.ERROR)
+logger = logging.getLogger("botocore")
+logger.setLevel(logging.ERROR)
 
 
 class AWSApi:
+    """AWS Api Class"""
+
     def __init__(self, config_options: Mapping[str, Any]) -> None:
         self.session = Session()
         self.config = Config(**config_options)
 
     def get_rds_client(self) -> RDSClient:
+        """Gets a boto RDS client"""
         return self.session.client("rds", config=self.config)
 
     def get_rds_valid_update_versions(self, engine: str, version: str) -> set[str]:
+        """Gets the valid update versions"""
         data = self.get_rds_client().describe_db_engine_versions(
             Engine=engine, EngineVersion=version, IncludeAll=True
         )
@@ -38,10 +46,10 @@ class AWSApi:
                 item.get("EngineVersion", "-1")
                 for item in data["DBEngineVersions"][0].get("ValidUpgradeTarget", [])
             }
-        else:
-            return set[str]()
+        return set[str]()
 
     def get_rds_parameter_groups(self, engine: str) -> set[str]:
+        """Gets the existing parameter groups by engine"""
         filters: list[FilterTypeDef] = [
             {"Name": "db-parameter-group-family", "Values": [engine]},
         ]
@@ -50,14 +58,19 @@ class AWSApi:
 
 
 class RDSPlanValidator:
-    def __init__(self, plan: TerraformJsonPlanParser, input: AppInterfaceInput) -> None:
+    """The plan validator class"""
+
+    def __init__(
+        self, plan: TerraformJsonPlanParser, app_interface_input: AppInterfaceInput
+    ) -> None:
         self.plan = plan
-        self.input = input
+        self.input = app_interface_input
         self.aws_api = AWSApi(config_options={"region_name": "us-east-1"})
         self.errors: list[str] = []
 
     @property
     def aws_db_instance_updates(self) -> list[ResourceChange]:
+        "Gets the plan updates"
         return [
             c
             for c in self.plan.plan.resource_changes
@@ -78,8 +91,10 @@ class RDSPlanValidator:
                 )
                 if desired_version not in valid_update_versions:
                     self.errors.append(
-                        "Engine version cannot be updated. Current_version: %s, Desired_version: %s, Valid update versions: %s"
-                        % (current_version, desired_version, valid_update_versions)
+                        "Engine version cannot be updated. "
+                        f"Current_version: {current_version}, "
+                        f"Desired_version: {desired_version}, "
+                        f"Valid update versions: %{valid_update_versions}"
                     )
                 if not self.input.data.allow_major_version_upgrade:
                     self.errors.append(
@@ -87,21 +102,19 @@ class RDSPlanValidator:
                     )
 
     def validate(self) -> bool:
+        """Validate method"""
         self._validate_major_version_upgrade()
-        if self.errors:
-            return False
-        else:
-            return True
+        return not self.errors
 
 
 if __name__ == "__main__":
-    input: AppInterfaceInput = parse_model(
+    app_interface_input: AppInterfaceInput = parse_model(
         AppInterfaceInput,
         read_input_from_file(),
     )
     logging.info("Running RDS terraform plan validation")
     plan = TerraformJsonPlanParser(plan_path=sys.argv[1])
-    validator = RDSPlanValidator(plan, input)
+    validator = RDSPlanValidator(plan, app_interface_input)
     if not validator.validate():
         logging.error(validator.errors)
         sys.exit(1)

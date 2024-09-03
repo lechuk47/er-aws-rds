@@ -1,6 +1,6 @@
-ARG IMAGE_TAG=0.0.1
-FROM quay.io/app-sre/er-aws-rds:${IMAGE_TAG}
+ARG IMAGE_NAME
+ARG IMAGE_TAG=pre
+FROM ${IMAGE_NAME}:${IMAGE_TAG}
 
-COPY requirements_test.txt ./
-RUN pip3 install -r requirements_test.txt
+RUN poetry install --with dev
 COPY tests/ ./tests/

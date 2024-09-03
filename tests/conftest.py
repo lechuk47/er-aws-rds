@@ -2,12 +2,13 @@ import json
 
 from cdktf import Testing
 
-from input import AppInterfaceInput
+from er_aws_rds.input import AppInterfaceInput
 
 Testing.__test__ = False
 
 
 def input_data() -> dict:
+    """Returns a JSON input data"""
     return json.loads("""{
         "data": {
             "engine": "postgres",
@@ -86,4 +87,5 @@ def input_data() -> dict:
 
 
 def input_object() -> AppInterfaceInput:
+    """Returns an AppInterfaceInput object"""
     return AppInterfaceInput.model_validate(input_data())
