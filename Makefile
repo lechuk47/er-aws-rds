@@ -26,7 +26,7 @@ build:
 
 .PHONY: push
 push:
-	$(CONTAINER_ENGINE) push ${BASE_IMAGE}:${IMAGE_TAG}
+	$(CONTAINER_ENGINE) push ${IMAGE_NAME}:${IMAGE_TAG}
 
 .PHONY: deploy
 deploy: build test push
