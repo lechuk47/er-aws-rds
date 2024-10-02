@@ -109,29 +109,30 @@ class Stack(TerraformStack):
         ).result
 
     def _enhanced_monitoring(self) -> None:
-        assume_role_policy = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "sts:AssumeRole",
-                    "Principal": {"Service": "monitoring.rds.amazonaws.com"},
-                    "Effect": "Allow",
-                }
-            ],
-        }
-        m_role = IamRole(
-            self,
-            id_=self.data.identifier + "-enhanced-monitoring",
-            assume_role_policy=json.dumps(assume_role_policy),
-        )
+        if self.data.enhanced_monitoring:
+            assume_role_policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Action": "sts:AssumeRole",
+                        "Principal": {"Service": "monitoring.rds.amazonaws.com"},
+                        "Effect": "Allow",
+                    }
+                ],
+            }
+            m_role = IamRole(
+                self,
+                id_=self.data.identifier + "-enhanced-monitoring",
+                assume_role_policy=json.dumps(assume_role_policy),
+            )
 
-        policy_arn = f"arn:{self.data.aws_partition}:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
-        IamRolePolicyAttachment(
-            self,
-            id_=f"{self.data.identifier}-policy-attachment",
-            role=m_role.name,
-            policy_arn=policy_arn,
-        )
+            policy_arn = f"arn:{self.data.aws_partition}:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+            IamRolePolicyAttachment(
+                self,
+                id_=f"{self.data.identifier}-policy-attachment",
+                role=m_role.name,
+                policy_arn=policy_arn,
+            )
 
     def _db_replicas(self) -> None:
         if self.data.replica_source:
