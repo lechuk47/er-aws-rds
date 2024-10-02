@@ -65,7 +65,9 @@ class RDSPlanValidator:
     ) -> None:
         self.plan = plan
         self.input = app_interface_input
-        self.aws_api = AWSApi(config_options={"region_name": "us-east-1"})
+        self.aws_api = AWSApi(
+            config_options={"region_name": app_interface_input.data.region}
+        )
         self.errors: list[str] = []
 
     @property
