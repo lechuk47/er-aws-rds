@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 
 from external_resources_io.input import AppInterfaceProvision
 from pydantic import (
@@ -46,8 +46,8 @@ class Parameter(BaseModel):
     """db_parameter_group_parameter"""
 
     name: str
-    value: str
-    apply_method: str  # Literal['immediate', 'pending-reboot'] = "immediate"
+    value: Any
+    apply_method: Literal["immediate", "pending-reboot"] | None = Field(default=None)
 
     @field_validator("value", mode="before")
     @classmethod

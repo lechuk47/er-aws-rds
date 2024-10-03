@@ -20,10 +20,11 @@ def input_data(parameters: Iterable[Parameter] | None) -> dict:
                 value="-1",
                 apply_method="pending-reboot",
             ),
+            Parameter(name="log_min_duration_statement", value=60000),
         ]
 
     parameters_json_string = json.dumps([
-        param.dict(by_alias=True) for param in parameters
+        param.model_dump(by_alias=True) for param in parameters
     ])
     """Returns a JSON input data"""
     return json.loads(

@@ -23,3 +23,11 @@ def test_validate_parameter_rds_replication() -> None:
                 ]
             )
         )
+
+
+def test_parameter_value_as_string() -> None:
+    """Test that parameters are serialized as strings"""
+    assert Parameter(name="test", value=60).model_dump(exclude_none=True) == {
+        "name": "test",
+        "value": "60",
+    }
