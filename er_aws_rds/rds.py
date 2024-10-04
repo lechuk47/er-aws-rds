@@ -1,7 +1,13 @@
 import json
 from typing import ClassVar
 
-from cdktf import ITerraformDependable, S3Backend, TerraformOutput, TerraformStack
+from cdktf import (
+    ITerraformDependable,
+    S3Backend,
+    TerraformOutput,
+    TerraformResourceLifecycle,
+    TerraformStack,
+)
 from cdktf_cdktf_provider_aws.data_aws_db_instance import DataAwsDbInstance
 from cdktf_cdktf_provider_aws.data_aws_kms_key import DataAwsKmsKey
 from cdktf_cdktf_provider_aws.data_aws_sns_topic import DataAwsSnsTopic
@@ -77,6 +83,7 @@ class Stack(TerraformStack):
                 for p in pg.parameters or []
             ],
             tags=tags,
+            lifecycle=TerraformResourceLifecycle(create_before_destroy=True),
         )
 
         self.db_dependencies.append(dbpg)
