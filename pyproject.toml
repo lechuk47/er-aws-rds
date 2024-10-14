@@ -12,8 +12,8 @@ documentation = "https://github.com/app-sre/er-aws-rds"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-cdktf-cdktf-provider-aws = "^19.30.0"
-cdktf-cdktf-provider-random = "^11.0.2"
+cdktf-cdktf-provider-aws = "==19.30.0"
+cdktf-cdktf-provider-random = "==11.0.2"
 external-resources-io = "^0.3.2"
 pydantic = "^2.8.2"
 boto3 = "^1.34.149"
