@@ -3,6 +3,7 @@ from typing import ClassVar
 
 from cdktf import (
     ITerraformDependable,
+    Precondition,
     S3Backend,
     TerraformOutput,
     TerraformResourceLifecycle,
@@ -204,6 +205,14 @@ class Stack(TerraformStack):
             )
 
     def _outputs(self, db_instance: DbInstance) -> None:
+        TerraformOutput(
+            self,
+            "BLABLABLAB",
+            value="TRUE",
+            precondition=Precondition(
+                condition=db_instance.allow_major_version_upgrade, error_message="ERROR"
+            ),
+        )
         TerraformOutput(
             self, self.data.output_prefix + "__db_host", value=db_instance.address
         )
