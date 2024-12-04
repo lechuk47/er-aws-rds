@@ -2,6 +2,7 @@ import json
 from typing import ClassVar
 
 from cdktf import (
+    DataTerraformRemoteStateS3,
     ITerraformDependable,
     S3Backend,
     TerraformOutput,
@@ -106,6 +107,8 @@ class Stack(TerraformStack):
             )
 
     def _password(self) -> None:
+        if self.data.is_read_replica:
+            return
         self.data.password = Password(
             self,
             id=f"{self.data.identifier}-password",
@@ -207,21 +210,21 @@ class Stack(TerraformStack):
 
     def _outputs(self, db_instance: DbInstance) -> None:
         TerraformOutput(
-            self, self.data.output_prefix + "__db_host", value=db_instance.address
+            self, f"{self.data.identifier}__db_host", value=db_instance.address
         )
         TerraformOutput(
-            self, self.data.output_prefix + "__db_port", value=db_instance.port
+            self, f"{self.data.identifier}__db_port", value=db_instance.port
         )
         TerraformOutput(
             self,
-            self.data.output_prefix + "__db_name",
+            f"{self.data.identifier}__db_name",
             value=self.data.output_resource_db_name or db_instance.db_name,
         )
 
         if self.data.ca_cert:
             TerraformOutput(
                 self,
-                self.data.output_prefix + "__db_ca_cert",
+                f"{self.data.identifier}__db_ca_cert",
                 sensitive=False,
                 value=self.data.ca_cert.to_vault_ref(),
             )
@@ -233,22 +236,48 @@ class Stack(TerraformStack):
         ):
             TerraformOutput(
                 self,
-                self.data.output_prefix + "__db_user",
+                f"{self.data.identifier}__db_user",
                 value=db_instance.username,
                 sensitive=True,
             )
             TerraformOutput(
                 self,
-                self.data.output_prefix + "__db_password",
+                f"{self.data.identifier}__db_password",
                 value=db_instance.password,
                 sensitive=True,
             )
             if self.data.reset_password:
                 TerraformOutput(
                     self,
-                    self.data.output_prefix + "__reset_password",
+                    f"{self.data.identifier}__reset_password",
                     value=self.data.reset_password,
                 )
+
+        if self.data.replica_source is not None:
+            trs = DataTerraformRemoteStateS3(
+                self,
+                "remote_state",
+                bucket=self.provision.module_provision_data.tf_state_bucket,
+                region=self.provision.module_provision_data.tf_state_region,
+                key=f"aws/{self.provision.provisioner}/rds/{self.data.replica_source.identifier}/terraform.tfstate",
+                profile="external-resources-state",
+            )
+            TerraformOutput(
+                self,
+                f"{self.data.identifier}__db_username",
+                value=trs.get_string(
+                    "f{self.data.replica_source.identifier}__db_username"
+                ),
+                sensitive=True,
+            )
+            TerraformOutput(
+                self,
+                f"{self.data.identifier}__db_password",
+                value=trs.get_string(
+                    "f{self.data.replica_source.identifier}__db_password"
+                ),
+                sensitive=True,
+            )
 
     def _run(self) -> None:
         self._password()

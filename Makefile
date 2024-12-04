@@ -1,32 +1,41 @@
-CODE_ROOT := er_aws_rds
+SITE_PACKAGES_DIR ?= $(shell .venv/bin/python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
 CONTAINER_ENGINE ?= $(shell which podman >/dev/null 2>&1 && echo podman || echo docker)
-IMAGE_NAME := quay.io/app-sre/er-aws-rds
-IMAGE_TAG := $(shell git describe --tags)
-ifeq ($(IMAGE_TAG),)
-	IMAGE_TAG = pre
-endif
-BUILD_ARGS := CODE_ROOT=$(CODE_ROOT) POETRY_VERSION=1.8.3 IMAGE_NAME=$(IMAGE_NAME) IMAGE_TAG=$(IMAGE_TAG)
 
 .PHONY: format
 format:
-	poetry run ruff check
-	poetry run ruff format
+	uv run ruff check
+	uv run ruff format
+
+.PHONY: image_tests
+image_tests:
+	# test /tmp must be empty
+	[ -z "$(shell ls -A /tmp)" ]
+	# validate_plan.py must exist
+	[ -f "validate_plan.py" ]
+
+.PHONY: code_tests
+code_tests:
+	uv run ruff check --no-fix
+	uv run ruff format --check
+	uv run mypy
+	uv run pytest -vv --cov=er_aws_rds --cov-report=term-missing --cov-report xml
+
+.PHONY: dependency_tests
+dependency_tests:
+	python -c "import cdktf_cdktf_provider_random"
+	python -c "import cdktf_cdktf_provider_aws"
 
 .PHONY: test
-test: build
-	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME)-test $(foreach arg,$(BUILD_ARGS),--build-arg $(arg)) -f dockerfiles/Dockerfile.test .
-	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run ruff check --no-fix
-	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run ruff format --check
-	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run mypy
-	$(CONTAINER_ENGINE) run --rm --entrypoint poetry $(IMAGE_NAME)-test run pytest -vv --cov=$(CODE_ROOT) --cov-report=term-missing --cov-report xml
+test: image_tests code_tests dependency_tests
 
 .PHONY: build
 build:
-	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME):${IMAGE_TAG} $(foreach arg,$(BUILD_ARGS),--build-arg $(arg)) -f dockerfiles/Dockerfile .
+	$(CONTAINER_ENGINE) build --progress plain -t er-aws-rds:test .
 
-.PHONY: push
-push:
-	$(CONTAINER_ENGINE) push ${IMAGE_NAME}:${IMAGE_TAG}
-
-.PHONY: deploy
-deploy: build test push
+.PHONY: dev
+dev:
+	# Prepare local development environment
+	uv sync
+	# The CDKTF python module generation needs at least 12GB of memory!
+	$(CONTAINER_ENGINE) run --rm -it -v $(PWD)/:/home/app/src -v $(PWD)/.gen:/cdktf-providers:z --entrypoint cdktf-provider-sync quay.io/redhat-services-prod/app-sre-tenant/er-base-cdktf-main/er-base-cdktf-main:latest /cdktf-providers
+	cp sitecustomize.py $(SITE_PACKAGES_DIR)
