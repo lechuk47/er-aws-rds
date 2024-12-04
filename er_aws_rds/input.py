@@ -236,6 +236,11 @@ class Rds(RdsAppInterface):
 
         return self
 
+    @property
+    def is_read_replica(self) -> bool:
+        """Returns true if the instance is a read replica"""
+        return self.replica_source is not None or self.replicate_source_db is not None
+
 
 class AppInterfaceInput(BaseModel):
     """The input model class"""

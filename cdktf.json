@@ -1,10 +1,7 @@
 {
   "language": "python",
-  "app": "python3 -m er_aws_rds",
-  "projectId": "ce15f6e1-922e-4c7d-be32-4d94fc82be9a",
+  "app": "er-aws-rds",
   "sendCrashReports": "false",
-  "terraformProviders": [],
-  "terraformModules": [],
-  "codeMakerOutput": "imports",
-  "context": {}
+  "terraformProviders": ["random@ = 3.6.3", "aws@ = 5.50.0"],
+  "projectId": "49778ce7-523f-482c-a0e7-bad21132b58c"
 }
