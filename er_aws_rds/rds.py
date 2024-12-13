@@ -61,22 +61,17 @@ class Stack(TerraformStack):
         RandomProvider(self, "Random")
 
     def _populate_parameter_group(
-        self, pg: ParameterGroup, db_identifier: str, tags: dict[str, str]
-    ) -> str:
+        self, pg: ParameterGroup, tags: dict[str, str]
+    ) -> DbParameterGroup:
         # Dumping the whole parameter group doesn't work. "Parameter" values are populated correctly
         # but CDKTF does not take the apply_method attribute.
         # I don't know/understand why. Dumping the parameters separately works well.
         # DbParameterGroup(self, **pg.model_dump())
 
-        # With this model each database will have it's own PG
-        # No re-use. If a common PG is changed in AppInterface, all dependant
-        # database PGs will be reconciled
-        pg_name = f"{db_identifier}-{pg.name or 'pg'}"
-
-        dbpg = DbParameterGroup(
+        return DbParameterGroup(
             self,
-            id_=pg_name,
-            name=pg_name,
+            id_=pg.computed_pg_name,
+            name=pg.computed_pg_name,
             family=pg.family,
             description=pg.description,
             parameter=[
@@ -87,22 +82,19 @@ class Stack(TerraformStack):
             lifecycle=TerraformResourceLifecycle(create_before_destroy=True),
         )
 
-        self.db_dependencies.append(dbpg)
-        return pg_name
-
     def _parameter_groups(self) -> None:
         """Creates required parameter groups"""
         if self.data.parameter_group:
-            self.data.parameter_group_name = self._populate_parameter_group(
+            dbpg = self._populate_parameter_group(
                 self.data.parameter_group,
-                self.data.identifier,
                 self.data.tags,
             )
+            self.db_dependencies.append(dbpg)
+            self.data.parameter_group_name = self.data.parameter_group.computed_pg_name
 
         if self.data.old_parameter_group:
             self._populate_parameter_group(
                 self.data.old_parameter_group,
-                self.data.identifier,
                 self.data.tags,
             )
 

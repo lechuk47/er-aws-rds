@@ -10,8 +10,7 @@ from .conftest import input_object
 class TestMain:
     """Main test class"""
 
-    input = input_object()
-    stack = Stack(Testing.app(), "CDKTF", input)
+    stack = Stack(Testing.app(), "CDKTF", input_object())
     synthesized = Testing.synth(stack)
 
     def test_should_contain_rds_instance(self) -> None:
