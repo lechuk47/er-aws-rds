@@ -64,6 +64,9 @@ class ParameterGroup(BaseModel):
     description: str | None = None
     parameters: list[Parameter] | None = Field(default=None, exclude=True)
 
+    # This attribute is set by a model_validator in the RDS class
+    computed_pg_name: str = Field(default="", exclude=True)
+
     # This was used to populate DbParameterGroup(self, **pg.model_dump()) directy
     # but it did not work. "parameters" come from App-Interface but terraform needs "parameter" (singular)
     # @computed_field
@@ -220,18 +223,27 @@ class Rds(RdsAppInterface):
 
     @model_validator(mode="after")
     def parameter_groups(self) -> "Rds":
-        """old_parameter_group requires parameter_group"""
+        "Sets the right parameter group names. The instance identifier is used as prefix on each pg"
+        "This way each instance will have its own parameter group, withouth re-using them on multiple instances"
+        if self.parameter_group:
+            self.parameter_group.computed_pg_name = (
+                f"{self.identifier}-{self.parameter_group.name or 'pg'}"
+            )
+
         if self.old_parameter_group and not self.parameter_group:
             msg = "old_parameter_group must be used with parameter_group. old_parameter_group is only used for RDS major version upgrades"
             raise ValueError(msg)
+
         if self.old_parameter_group and self.parameter_group:
-            default_pg_name = self.identifier + "-pg"
-            self.parameter_group.name = self.parameter_group.name or default_pg_name
-            self.old_parameter_group.name = (
-                self.old_parameter_group.name or default_pg_name
+            self.old_parameter_group.computed_pg_name = (
+                f"{self.identifier}-{self.old_parameter_group.name or 'pg'}"
             )
-            if self.old_parameter_group.name == self.parameter_group.name:
-                msg = "parameter_group must have a unique name"
+
+            if (
+                self.old_parameter_group.computed_pg_name
+                == self.parameter_group.computed_pg_name
+            ):
+                msg = "Parameter group and old parameter group have the same name. Assign a name to the new parameter group"
                 raise ValueError(msg)
 
         return self
