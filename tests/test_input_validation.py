@@ -89,3 +89,10 @@ def test_parameter_group_name_along_old_parameter_group_without_names() -> None:
         match=".*Parameter group and old parameter group have the same name.*",
     ):
         AppInterfaceInput.model_validate(mod_input)
+
+
+def test_name() -> None:
+    """Test name not set validates ok"""
+    mod_input = input_data([])
+    mod_input["data"].pop("name")
+    AppInterfaceInput.model_validate(mod_input)

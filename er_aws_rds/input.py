@@ -96,7 +96,7 @@ class RdsAppInterface(BaseModel):
 
     # Name is deprecated. db_name is included as a computed_field
     name: str | None = Field(
-        max_length=63, pattern=r"^[a-zA-Z][a-zA-Z0-9_]+$", exclude=True
+        max_length=63, pattern=r"^[a-zA-Z][a-zA-Z0-9_]+$", exclude=True, default=None
     )
     aws_partition: str | None = Field(default="aws", exclude=True)
     region: str = Field(exclude=True)
