@@ -1,6 +1,8 @@
 from cdktf import Testing
 from cdktf_cdktf_provider_aws.db_instance import DbInstance
 from cdktf_cdktf_provider_aws.db_parameter_group import DbParameterGroup
+from cdktf_cdktf_provider_aws.iam_role import IamRole
+from cdktf_cdktf_provider_aws.iam_role_policy_attachment import IamRolePolicyAttachment
 
 from er_aws_rds.rds import Stack
 
@@ -45,4 +47,24 @@ class TestMain:
             },
             # Test fails if I add the parameters. It works for 1 parameter
             # but fails if I set the full list
+        )
+
+    def test_enhanced_monitoring(self) -> None:
+        """Test enhanced monitoring"""
+        assert Testing.to_have_resource_with_properties(
+            self.synthesized,
+            IamRole.TF_RESOURCE_TYPE,
+            {
+                "name": "test-rds-enhanced-monitoring",
+                "assume_role_policy": '{"Version": "2012-10-17", "Statement": [{"Action": "sts:AssumeRole", "Principal": {"Service": "monitoring.rds.amazonaws.com"}, "Effect": "Allow"}]}',
+            },
+        )
+
+        assert Testing.to_have_resource_with_properties(
+            self.synthesized,
+            IamRolePolicyAttachment.TF_RESOURCE_TYPE,
+            {
+                "role": "${aws_iam_role.test-rds-enhanced-monitoring.name}",
+                "policy_arn": "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole",
+            },
         )
